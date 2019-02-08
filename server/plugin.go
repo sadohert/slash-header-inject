@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sync"
 
@@ -75,5 +76,36 @@ func (p *Plugin) registerCommand() error {
 	return nil
 }
 
-// TODO Extract customer header KVs for "OnExecute"
+// TODO Extract customer header KVs on configuration change
+// TODO Extract customer header KVs for "ExecuteCommand"
+func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+	//configuration := p.getConfiguration()
+
+	url := "https://d9b60eb6-42a3-47d5-8032-540a066977ef.mock.pstmn.io/test_path"
+	fmt.Println("URL:>", url)
+
+	//var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
+	//req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Set("X-Custom-Header", "myvalue")
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+	return &model.CommandResponse{
+		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+		Text:         fmt.Sprintf("Custom Command Response: " + string(body)),
+	}, nil
+
+}
+
 // TODO OnExecute follows - https://stackoverflow.com/a/24455606
