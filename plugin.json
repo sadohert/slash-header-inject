@@ -1,7 +1,7 @@
 {
-    "id": "com.mattermost.sample-plugin",
-    "name": "Sample Plugin",
-    "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
+    "id": "com.mattermost.slash-header-inject",
+    "name": "Custom Header Injection",
+    "description": "This plugin injects custom HTTP headers prior to making slash command API endpoint calls.  This is a reference only.  Changing the headers requires editing and rebuilding the code (for now...)",
     "version": "0.0.1",
     "server": {
         "executables": {
