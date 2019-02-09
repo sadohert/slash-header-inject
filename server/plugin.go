@@ -49,9 +49,9 @@ func (p *Plugin) OnActivate() error {
 		return err
 	}
 
-	//configuration := p.getConfiguration()
+	configuration := p.getConfiguration()
 
-	if err := p.registerCommand(); err != nil {
+	if err := p.registerCommand(configuration); err != nil {
 		return errors.Wrap(err, "failed to register command")
 	}
 
@@ -61,9 +61,9 @@ func (p *Plugin) OnActivate() error {
 // TODO Register the new command against all teams
 const CommandTrigger = "custom_slash"
 
-func (p *Plugin) registerCommand() error {
+func (p *Plugin) registerCommand(c *configuration) error {
 	if err := p.API.RegisterCommand(&model.Command{
-		Trigger:      CommandTrigger,
+		Trigger:      c.SlashCommands[0].Trigger,
 		AutoComplete: true,
 		//		AutoCompleteHint: "(true|false)",
 		AutoCompleteDesc: "<Insert description of slash command endpoint>",
