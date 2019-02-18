@@ -20,11 +20,12 @@ type Plugin struct {
 
 	// configuration is the active plugin configuration. Consult getConfiguration and
 	// setConfiguration for usage.
-	configuration *configuration
+	configuration *Configuration
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, world7!")
+	config := p.API.GetPluginConfig()
+	fmt.Fprintf(w, "CONFIG ARRAY %+v", config)
 }
 
 const minimumServerVersion = "5.4.0"
@@ -50,27 +51,34 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	configuration := p.getConfiguration()
+	p.API.LogDebug(
+		"Registering custom slash commands",
+		//		"Command Count", len(configuration.slashcommands),
+	)
 
-	if err := p.registerCommand(configuration); err != nil {
-		return errors.Wrap(err, "failed to register command")
+	if err := p.registerCommands(configuration); err != nil {
+		return errors.Wrap(err, "failed to register commands")
 	}
 
 	return nil
 }
 
-// TODO Register the new command against all teams
-const CommandTrigger = "custom_slash"
-
-func (p *Plugin) registerCommand(c *configuration) error {
-	if err := p.API.RegisterCommand(&model.Command{
-		Trigger:      c.SlashCommands[0].Trigger,
-		AutoComplete: true,
-		//		AutoCompleteHint: "(true|false)",
-		AutoCompleteDesc: "<Insert description of slash command endpoint>",
-		DisplayName:      "<Call custom command>",
-		Description:      "<Calls our in-house enterprise API>",
-	}); err != nil {
-		return errors.Wrap(err, "failed to register command")
+func (p *Plugin) registerCommands(c *Configuration) error {
+	for _, slashCommand := range c.SlashCommands {
+		p.API.LogDebug(
+			"Custom slash command",
+			"Trigger", slashCommand.Trigger,
+		)
+		if err := p.API.RegisterCommand(&model.Command{
+			Trigger:      slashCommand.Trigger,
+			AutoComplete: true,
+			//		AutoCompleteHint: "(true|false)",
+			AutoCompleteDesc: "<Insert description of slash command endpoint>",
+			DisplayName:      "<Call custom command>",
+			Description:      "<Calls our in-house enterprise API>",
+		}); err != nil {
+			return errors.Wrap(err, "failed to register command")
+		}
 	}
 
 	return nil

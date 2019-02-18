@@ -18,28 +18,36 @@ type SlashCommand struct {
 	// AutoCompleteDesc string
 	// DisplayName string
 	// Description string
-	// CustomHttpHeaders [] CustomHttpHeader
+	// CustomHttpHeaders []CustomHttpHeader
 }
-type configuration struct {
-	SlashCommands []*SlashCommand
+
+type Configuration struct {
+	MainCommand   string
+	SlashCommands []SlashCommand
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
 // your configuration has reference types.
-func (c *configuration) Clone() *configuration {
+func (c *Configuration) Clone() *Configuration {
 	var clone = *c
+	// // scs := make([]string, len(c.slashcommands))
+	// for _, sc := range c.SlashCommands {
+	// 	fmt.Println("COPIED COMMAND")
+	// 	clone.SlashCommands = append(clone.SlashCommands, sc)
+	// }
+	// // clone.slashcommands = scs
 	return &clone
 }
 
 // getConfiguration retrieves the active configuration under lock, making it safe to use
 // concurrently. The active configuration may change underneath the client of this method, but
 // the struct returned by this API call is considered immutable.
-func (p *Plugin) getConfiguration() *configuration {
+func (p *Plugin) getConfiguration() *Configuration {
 	p.configurationLock.RLock()
 	defer p.configurationLock.RUnlock()
 
 	if p.configuration == nil {
-		return &configuration{}
+		return &Configuration{}
 	}
 
 	return p.configuration
@@ -54,7 +62,7 @@ func (p *Plugin) getConfiguration() *configuration {
 // This method panics if setConfiguration is called with the existing configuration. This almost
 // certainly means that the configuration was modified without being cloned and may result in
 // an unsafe access.
-func (p *Plugin) setConfiguration(configuration *configuration) {
+func (p *Plugin) setConfiguration(configuration *Configuration) {
 	p.configurationLock.Lock()
 	defer p.configurationLock.Unlock()
 
@@ -74,7 +82,7 @@ func (p *Plugin) setConfiguration(configuration *configuration) {
 
 // OnConfigurationChange is invoked when configuration changes may have been made.
 func (p *Plugin) OnConfigurationChange() error {
-	var configuration = new(configuration)
+	var configuration = new(Configuration)
 
 	// Load the public configuration fields from the Mattermost server configuration.
 	if err := p.API.LoadPluginConfiguration(configuration); err != nil {
