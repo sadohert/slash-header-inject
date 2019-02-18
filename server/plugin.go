@@ -64,18 +64,18 @@ func (p *Plugin) OnActivate() error {
 }
 
 func (p *Plugin) registerCommands(c *Configuration) error {
-	for _, slashCommand := range c.SlashCommands {
+	for sc, scConfig := range c.SlashCommands {
 		p.API.LogDebug(
 			"Custom slash command",
-			"Trigger", slashCommand.Trigger,
+			"Trigger", sc,
 		)
 		if err := p.API.RegisterCommand(&model.Command{
-			Trigger:      slashCommand.Trigger,
-			AutoComplete: true,
+			Trigger:      sc,
+			AutoComplete: scConfig.AutoComplete,
 			//		AutoCompleteHint: "(true|false)",
-			AutoCompleteDesc: "<Insert description of slash command endpoint>",
-			DisplayName:      "<Call custom command>",
-			Description:      "<Calls our in-house enterprise API>",
+			AutoCompleteDesc: scConfig.AutoCompleteDesc,
+			DisplayName:      scConfig.DisplayName,
+			Description:      scConfig.Description,
 		}); err != nil {
 			return errors.Wrap(err, "failed to register command")
 		}

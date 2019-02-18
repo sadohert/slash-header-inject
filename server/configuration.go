@@ -13,29 +13,22 @@ type CustomHttpHeader struct {
 }
 type SlashCommand struct {
 	// Matches parameter list of Plugin.API.RegisterCommand TODO Need a useful link here
-	Trigger string
-	// AutoComplete string
-	// AutoCompleteDesc string
-	// DisplayName string
-	// Description string
+	AutoComplete     bool
+	AutoCompleteDesc string
+	DisplayName      string
+	Description      string
 	// CustomHttpHeaders []CustomHttpHeader
 }
 
 type Configuration struct {
 	MainCommand   string
-	SlashCommands []SlashCommand
+	SlashCommands map[string]SlashCommand
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
 // your configuration has reference types.
 func (c *Configuration) Clone() *Configuration {
 	var clone = *c
-	// // scs := make([]string, len(c.slashcommands))
-	// for _, sc := range c.SlashCommands {
-	// 	fmt.Println("COPIED COMMAND")
-	// 	clone.SlashCommands = append(clone.SlashCommands, sc)
-	// }
-	// // clone.slashcommands = scs
 	return &clone
 }
 
