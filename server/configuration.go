@@ -7,17 +7,19 @@ import (
 )
 
 // Name/Value pair of custom headers added to a custom slash command http call
-type CustomHttpHeader struct {
+type CustomHTTPHeader struct {
 	Name  string
 	Value string
 }
 type SlashCommand struct {
 	// Matches parameter list of Plugin.API.RegisterCommand TODO Need a useful link here
+	RequestType      string
 	AutoComplete     bool
 	AutoCompleteDesc string
 	DisplayName      string
 	Description      string
-	// CustomHttpHeaders []CustomHttpHeader
+	CommandURL       string
+	// CustomHTTPHeaders []CustomHTTPHeader
 }
 
 type Configuration struct {

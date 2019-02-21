@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/blang/semver"
@@ -53,7 +54,7 @@ func (p *Plugin) OnActivate() error {
 	configuration := p.getConfiguration()
 	p.API.LogDebug(
 		"Registering custom slash commands",
-		//		"Command Count", len(configuration.slashcommands),
+		"Command Count", len(configuration.SlashCommands),
 	)
 
 	if err := p.registerCommands(configuration); err != nil {
@@ -87,14 +88,26 @@ func (p *Plugin) registerCommands(c *Configuration) error {
 // TODO Extract customer header KVs on configuration change
 // TODO Extract customer header KVs for "ExecuteCommand"
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	//configuration := p.getConfiguration()
+	configuration := p.getConfiguration()
 
-	url := "https://d9b60eb6-42a3-47d5-8032-540a066977ef.mock.pstmn.io/test_path"
-	fmt.Println("URL:>", url)
+	// Extract the command
+	commandName := strings.TrimSpace(args.Command[1:])
+	p.API.LogDebug(
+		"Executing command",
+		"Command Name", commandName,
+	)
+	slashcommand := configuration.SlashCommands[commandName]
+
+	// TODO Check for valid slash command
+	url := slashcommand.CommandURL
 
 	//var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
 	//req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(slashcommand.RequestType, url, nil)
+	if err != nil {
+		panic(err)
+	}
+
 	req.Header.Set("X-Custom-Header", "myvalue")
 	req.Header.Set("Content-Type", "application/json")
 
