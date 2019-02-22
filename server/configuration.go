@@ -6,20 +6,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Name/Value pair of custom headers added to a custom slash command http call
-type CustomHTTPHeader struct {
-	Name  string
-	Value string
-}
 type SlashCommand struct {
 	// Matches parameter list of Plugin.API.RegisterCommand TODO Need a useful link here
-	RequestType      string
-	AutoComplete     bool
-	AutoCompleteDesc string
-	DisplayName      string
-	Description      string
-	CommandURL       string
-	// CustomHTTPHeaders []CustomHTTPHeader
+	RequestType       string
+	AutoComplete      bool
+	AutoCompleteDesc  string
+	DisplayName       string
+	Description       string
+	CommandURL        string
+	CustomHTTPHeaders map[string]string
+	// TODO Add option for other post types besides ephemeral
 }
 
 type Configuration struct {

@@ -107,9 +107,9 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	if err != nil {
 		panic(err)
 	}
-
-	req.Header.Set("X-Custom-Header", "myvalue")
-	req.Header.Set("Content-Type", "application/json")
+	for header, value := range slashcommand.CustomHTTPHeaders {
+		req.Header.Set(header, value)
+	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -118,13 +118,11 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println("response Body:", string(body))
 	return &model.CommandResponse{
 		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-		Text:         fmt.Sprintf("Custom Command Response: " + string(body)),
+		Text:         fmt.Sprintf(string(body)),
 	}, nil
 
 }
