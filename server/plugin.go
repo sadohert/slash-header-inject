@@ -88,7 +88,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	if err != nil {
 		return &model.CommandResponse{
 			ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-			Text:         fmt.Sprintf("Failed to retrieve channel for ChannelID %s", args.ChannelId),
+			Text:         fmt.Sprintf("Failed to retrieve channel for ChannelID %s Channel %s ", args.ChannelId, channel.Name),
 		}, nil
 	}
 	return &model.CommandResponse{
