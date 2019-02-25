@@ -77,3 +77,22 @@ func (p *Plugin) registerCommand() error {
 
 // TODO Extract customer header KVs for "OnExecute"
 // TODO OnExecute follows - https://stackoverflow.com/a/24455606
+func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+	var err error
+	//configuration := p.getConfiguration()
+	p.API.LogDebug(
+		"Executing command - Extracting team/channel/user",
+		"CommandArgs", fmt.Sprintf("%+v", args),
+	)
+	channel, err := p.API.GetChannel(args.ChannelId)
+	if err != nil {
+		return &model.CommandResponse{
+			ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+			Text:         fmt.Sprintf("Failed to retrieve channel for ChannelID %s", args.ChannelId),
+		}, nil
+	}
+	return &model.CommandResponse{
+		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+		Text:         fmt.Sprintf("ChannelID %s, ChannelName %s", args.ChannelId, channel.Name),
+	}, nil
+}
