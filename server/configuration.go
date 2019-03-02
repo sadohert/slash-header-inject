@@ -6,6 +6,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO Validate the name of the slash command is a single token (or maybe RegisterCommand does?)
+// TODO Other config validation?
+
 type SlashCommand struct {
 	// Matches parameter list of Plugin.API.RegisterCommand TODO Need a useful link here
 	RequestType       string
