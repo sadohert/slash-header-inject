@@ -72,6 +72,10 @@ func (p *Plugin) OnActivate() error {
 
 func (p *Plugin) registerCommands(c *Configuration) error {
 	for sc, scConfig := range c.SlashCommands {
+		if len(sc) == 0 {
+			p.API.LogWarn("Custom slash command must have an alphanumeric name")
+			continue
+		}
 		p.API.LogDebug(
 			"Custom slash command",
 			"Trigger", sc,
@@ -97,7 +101,43 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	// var err error
 	configuration := p.getConfiguration()
 	p.API.LogDebug(
-		"Executing command - Extracting team/channel/user",
+		"Parse Command",
+	)
+	// Extract the command
+	commandName := strings.TrimSpace(args.Command[1:])
+	trigger := ""
+	cmdText := ""
+	if len(args.Command) != 0 {
+		parts := strings.Split(args.Command, " ")
+		trigger = parts[0][1:]
+		trigger = strings.ToLower(trigger)
+		cmdText = strings.Join(parts[1:], " ")
+	}
+
+	// TODO - Error handling if the SlashCommand doens't exist
+	slashcommand, ok := configuration.SlashCommands[trigger]
+	if !ok {
+		return nil, model.NewAppError("ExecuteCommand", "slash-header-inject",
+			map[string]interface{}{"Trigger": trigger},
+			"Missing config", http.StatusInternalServerError)
+	}
+
+	p.API.LogDebug(
+		"Setup command",
+		"Command Name", commandName,
+	)
+	req, err := p.createSlashCommandHTTPRequest(slashcommand, trigger, cmdText, args)
+	if err != nil {
+		return nil, err
+	}
+	return p.doSlashCommandHTTPCall(trigger, req)
+
+}
+
+func (p *Plugin) createSlashCommandHTTPRequest(slashcommand SlashCommand, trigger string, cmdText string, args *model.CommandArgs) (*http.Request, *model.AppError) {
+
+	p.API.LogDebug(
+		"Extracting team/channel/user",
 		"CommandArgs", fmt.Sprintf("%+v", args),
 	)
 	channel, err := p.API.GetChannel(args.ChannelId)
@@ -124,26 +164,6 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 		)
 		return nil, model.NewAppError("Unable to find user", "slash-header-inject", map[string]interface{}{"User": args.UserId}, err.Error(), http.StatusInternalServerError)
 	}
-
-	p.API.LogDebug(
-		"Executing command - Parse Command",
-	)
-	// Extract the command
-	commandName := strings.TrimSpace(args.Command[1:])
-	trigger := ""
-	cmdText := ""
-	if len(args.Command) != 0 {
-		parts := strings.Split(args.Command, " ")
-		trigger = parts[0][1:]
-		trigger = strings.ToLower(trigger)
-		cmdText = strings.Join(parts[1:], " ")
-	}
-
-	p.API.LogDebug(
-		"Executing command",
-		"Command Name", commandName,
-	)
-	slashcommand := configuration.SlashCommands[trigger]
 
 	httpParams := url.Values{}
 	httpParams.Set("token", "NOT SUPPORTED")
@@ -177,31 +197,29 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	for header, value := range slashcommand.CustomHTTPHeaders {
 		req.Header.Set(header, value)
 	}
-	return p.doSlashCommandHTTPCall(slashcommand, req, httpParams)
-
-}
-
-func (p *Plugin) doSlashCommandHTTPCall(slashcommand SlashCommand, req *http.Request, httpParams url.Values) (*model.CommandResponse, *model.AppError) {
-
 	if slashcommand.RequestType == "GET" {
 		if req.URL.RawQuery != "" {
 			req.URL.RawQuery += "&"
 		}
 		req.URL.RawQuery += httpParams.Encode()
 	}
-
 	req.Header.Set("Accept", "application/json")
 	// TODO - No Token right now req.Header.Set("Authorization", "Token "+slashcommand.Token)
 	if slashcommand.RequestType == "POST" {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
+	return req, nil
+
+}
+
+func (p *Plugin) doSlashCommandHTTPCall(trigger string, req *http.Request) (*model.CommandResponse, *model.AppError) {
 
 	client := &http.Client{}
 	resp, e := client.Do(req)
 	if e != nil {
 		p.API.LogError(
 			"Custom Slash Command http call failed",
-			"Command Name", httpParams.Get("command"),
+			"Command Name", trigger,
 			"error", e,
 		)
 		return &model.CommandResponse{
@@ -219,7 +237,7 @@ func (p *Plugin) doSlashCommandHTTPCall(slashcommand SlashCommand, req *http.Req
 		bodyBytes, _ := ioutil.ReadAll(body)
 		p.API.LogError(
 			"Remote server returned failed status",
-			"Command Name", httpParams.Get("command"),
+			"Command Name", trigger,
 			"Status", resp.Status,
 			"body", string(bodyBytes),
 		)
@@ -231,9 +249,9 @@ func (p *Plugin) doSlashCommandHTTPCall(slashcommand SlashCommand, req *http.Req
 
 	response, e := model.CommandResponseFromHTTPBody(resp.Header.Get("Content-Type"), body)
 	if e != nil {
-		return nil, model.NewAppError("Slash Command Failed - Remote Server Error", "slash-header-inject", map[string]interface{}{"Command": httpParams.Get("command")}, e.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("Slash Command Failed - Remote Server Error", "slash-header-inject", map[string]interface{}{"Command": trigger}, e.Error(), http.StatusInternalServerError)
 	} else if response == nil {
-		return nil, model.NewAppError("Slash Command Failed - Remote Server Error", "slash-header-inject", map[string]interface{}{"Command": httpParams.Get("command")}, e.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("Slash Command Failed - Remote Server Error", "slash-header-inject", map[string]interface{}{"Command": trigger}, e.Error(), http.StatusInternalServerError)
 	}
 
 	return response, nil
