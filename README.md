@@ -1,47 +1,46 @@
-# Sample Plugin [![Build Status](https://travis-ci.org/mattermost/mattermost-plugin-sample.svg?branch=master)](https://travis-ci.org/mattermost/mattermost-plugin-sample)
+# Custom HTTP Header Slash Plugin 
 
-This plugin serves as a starting point for writing a Mattermost plugin. Feel free to base your own plugin off this repository.
+This plugin allows Mattermost administrators to create custom slash commands (similar to what can already be done through the UI) but with a configurable list of custom HTTP headers added to the `GET` or `POST` calls
 
-## Getting Started
-Shallow clone the repository to a directory matching your plugin name:
-```
-git clone --depth 1 https://github.com/mattermost/mattermost-plugin-sample com.example.my-plugin
-```
+## Installation
 
-Edit `plugin.json` with your `id`, `name`, and `description`:
-```
-{
-    "id": "com.example.my-plugin",
-    "name": "My Plugin",
-    "description": "A plugin to enhance Mattermost."
-}
-```
+1. Go to the releases tab of this Github repository and download the latest release.
+2. Upload this file in the Mattermost **System Console > Plugins > Management** page to install the plugin. To learn more about how to upload a plugin, [see the documentation](https://docs.mattermost.com/administration/plugins.html#plugin-uploads).
+3. Modify your `config.json` file (`PluginSettings` section) to include a map of custom slash commands and their desired custom headers as shown below.
 
-Build your plugin:
-```
-make
-```
+## Custom Slash Command Definition
 
-This will produce a single plugin file (with support for multiple architectures) for upload to your Mattermost server:
+Follow the same set of configurable properties as  used in the [built-in custom slash commands](https://docs.mattermost.com/developer/slash-commands.html#custom-slash-command).  NoteSee example below:
 
 ```
-dist/com.example.my-plugin.tar.gz
+        "Plugins": {
+            "slash-header-inject": {
+                "slashcommands": {
+                    "weather": {
+                        "autocomplete": true,
+                        "autocompletedesc": "Display the weather",
+                        "commandurl": "http://myweatherservice.com",
+                        "customhttpheaders": {
+                            "x-headerx": "X-Value",
+                            "x-headery": "Y-Value",
+                        },
+                        "description": "Weather slash command descriptions",
+                        "displayname": "Weather slash command  display name",
+                        "requesttype": "GET"
+                    },
+                    "stock_ticker": {
+                        "autocomplete": true,
+                        "autocompletedesc": "test_config_array2 autocomplete description",
+                        "commandurl": "http://localhost:3000",
+                        "customhttpheaders": {
+                            "x-mattermost-slash-header": "TEST_HEADER_VALUE"
+                        },
+                        "description": "Description goes here",
+                        "displayname": "display name goes here",
+                        "requesttype": "POST"
+                    }
+                }
+            }
+        }
+
 ```
-
-There is a build target to automate deploying and enabling the plugin to your server, but it requires configuration and [http](https://httpie.org/) to be installed:
-```
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_USERNAME=admin
-export MM_ADMIN_PASSWORD=password
-make deploy
-```
-
-Alternatively, if you are running your `mattermost-server` out of a sibling directory by the same name, use the `deploy` target alone to  unpack the files into the right directory. You will need to restart your server and manually enable your plugin.
-
-In production, deploy and upload your plugin via the [System Console](https://about.mattermost.com/default-plugin-uploads).
-
-## Q&A
-
-### How do I make a server-only or web app-only plugin?
-
-Simply delete the `server` or `webapp` folders and remove the corresponding sections from `plugin.json`. The build scripts will skip the missing portions automatically.
