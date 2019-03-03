@@ -10,7 +10,9 @@ This plugin allows Mattermost administrators to create custom slash commands (si
 
 ## Custom Slash Command Definition
 
-Follow the same set of configurable properties as  used in the [built-in custom slash commands](https://docs.mattermost.com/developer/slash-commands.html#custom-slash-command).  NoteSee example below:
+Follow the same set of configurable properties as  used in the [built-in custom slash commands](https://docs.mattermost.com/developer/slash-commands.html#custom-slash-command).  Note, commands must have an alphanumeric name.
+
+See example below:
 
 ```
         "Plugins": {
