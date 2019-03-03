@@ -145,9 +145,6 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	)
 	slashcommand := configuration.SlashCommands[trigger]
 
-	// // TODO Check for valid slash command
-	// url := slashcommand.CommandURL
-
 	httpParams := url.Values{}
 	httpParams.Set("token", "NOT SUPPORTED")
 
@@ -164,10 +161,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	httpParams.Set("text", cmdText)
 
 	// httpParams.Set("trigger_id", args.TriggerId)
-	// httpParams.Set("trigger_id", args.TriggerId)
 
-	//var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
-	//req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 	var req *http.Request
 	var e error
 	if slashcommand.RequestType == "GET" {
@@ -183,6 +177,11 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	for header, value := range slashcommand.CustomHTTPHeaders {
 		req.Header.Set(header, value)
 	}
+	return p.doSlashCommandHTTPCall(slashcommand, req, httpParams)
+
+}
+
+func (p *Plugin) doSlashCommandHTTPCall(slashcommand SlashCommand, req *http.Request, httpParams url.Values) (*model.CommandResponse, *model.AppError) {
 
 	if slashcommand.RequestType == "GET" {
 		if req.URL.RawQuery != "" {
@@ -202,7 +201,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	if e != nil {
 		p.API.LogError(
 			"Custom Slash Command http call failed",
-			"Command Name", trigger,
+			"Command Name", httpParams.Get("command"),
 			"error", e,
 		)
 		return &model.CommandResponse{
@@ -220,7 +219,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 		bodyBytes, _ := ioutil.ReadAll(body)
 		p.API.LogError(
 			"Remote server returned failed status",
-			"Command Name", trigger,
+			"Command Name", httpParams.Get("command"),
 			"Status", resp.Status,
 			"body", string(bodyBytes),
 		)
@@ -232,18 +231,10 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 
 	response, e := model.CommandResponseFromHTTPBody(resp.Header.Get("Content-Type"), body)
 	if e != nil {
-		return nil, model.NewAppError("Slash Command Failed - Remote Server Error", "slash-header-inject", map[string]interface{}{"Trigger": trigger}, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("Slash Command Failed - Remote Server Error", "slash-header-inject", map[string]interface{}{"Command": httpParams.Get("command")}, e.Error(), http.StatusInternalServerError)
 	} else if response == nil {
-		return nil, model.NewAppError("Slash Command Failed - Remote Server Error", "slash-header-inject", map[string]interface{}{"Trigger": trigger}, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("Slash Command Failed - Remote Server Error", "slash-header-inject", map[string]interface{}{"Command": httpParams.Get("command")}, e.Error(), http.StatusInternalServerError)
 	}
 
 	return response, nil
-
-	// return &model.CommandResponse{
-	// 	ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-	// 	Text:         fmt.Sprintf(string(body)),
-	// }, nil
-
 }
-
-// TODO OnExecute follows - https://stackoverflow.com/a/24455606
